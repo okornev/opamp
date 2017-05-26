@@ -17,12 +17,15 @@
  *******************************************************************************/
 package com.oneops.opamp.service;
 
+import static java.lang.Long.parseLong;
+
 import com.oneops.cms.cm.domain.CmsCI;
 import com.oneops.cms.cm.domain.CmsCIAttribute;
 import com.oneops.cms.cm.domain.CmsCIRelation;
 import com.oneops.cms.cm.service.CmsCmProcessor;
 import com.oneops.cms.dj.domain.CmsRelease;
 import com.oneops.cms.dj.service.CmsRfcProcessor;
+import com.oneops.cms.md.service.CmsMdProcessor;
 import com.oneops.cms.util.CmsConstants;
 import com.oneops.cms.util.domain.CmsVar;
 import org.apache.log4j.Logger;
@@ -41,10 +44,14 @@ public class EnvPropsProcessor {
 	
 	private CmsCmProcessor cmProcessor;
 	private CmsRfcProcessor rfcProcessor;
+	private CmsMdProcessor mdProcessor;
+
 	private static final long COOLOFF_PREIOD_4_RELEASE = 180000;
 	private static final String OPAMP_SUSPENDED = "IS_OPAMP_SUSPENDED";
 	private static final String HEARTBEAT_ALARMS_SUSPENDED = "HEARTBEAT_ALARMS_SUSPENDED";
 	private static final String EXPONENTIAL_REPAIR_DELAY_VAR = "EXPONENTIAL_REPAIR_DELAY";
+
+	private static final String EXCLUDE_IP_IN_NOTIFICATIONS = "EXCLUDE_IP_IN_NOTIFICATIONS";
 	
 	/**
 	 * Sets the cm processor.
@@ -60,6 +67,13 @@ public class EnvPropsProcessor {
 		this.rfcProcessor = rfcProcessor;
 	}
 
+	public void setMdProcessor(CmsMdProcessor mdProcessor) {
+		this.mdProcessor = mdProcessor;
+	}
+
+	public CmsMdProcessor getMdProcessor() {
+		return mdProcessor;
+	}
 	/**
 	 * Gets the env4 bom.
 	 *
@@ -291,6 +305,15 @@ public class EnvPropsProcessor {
 		return repairStatus != null && Boolean.TRUE.toString().equals(repairStatus.getValue());
 	}
 
+	public long getLongVariable(String key) {
+		CmsVar cacheStatus = cmProcessor.getCmSimpleVar(key);
+		if (cacheStatus != null) {
+			return parseLong(cacheStatus.getValue());
+		}
+
+		return 0;
+	}
+
 	/**
 	 * Fetch list of deployedTo relations for the given ciId
 	 * @param ciId
@@ -323,4 +346,13 @@ public class EnvPropsProcessor {
     public boolean isAutoReplaceEnabled(CmsCI platform) {
         return isAttributeEnabled(platform, "autoreplace");
     }
+
+	public boolean excludeIpInNotifications() {
+		return getBooleanVariable(EXCLUDE_IP_IN_NOTIFICATIONS);		
+	}
+
+	public void refreshMdCache() {
+		//no op for this
+		return;
+	}
 }
